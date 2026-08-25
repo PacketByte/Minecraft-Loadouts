@@ -4,7 +4,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.packetbyte.loadouts.data.Loadout;
 import com.packetbyte.loadouts.data.LoadoutManager;
-import com.packetbyte.loadouts.gui.LoadoutEditorScreen;
+import com.packetbyte.loadouts.engine.ApplyEngine;
+import com.packetbyte.loadouts.gui.LoadoutScreen;
 import com.packetbyte.loadouts.modules.LoadoutModule;
 import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.systems.modules.Modules;
@@ -40,10 +41,10 @@ public class LoadoutCommand extends Command {
         })));
 
         builder.then(literal("apply").executes(context -> {
-            module().requestApply(module().getActiveName());
+            ApplyEngine.get().start(module().getActiveName());
             return SINGLE_SUCCESS;
         }).then(argument("name", StringArgumentType.greedyString()).executes(context -> {
-            module().requestApply(StringArgumentType.getString(context, "name").trim());
+            ApplyEngine.get().start(StringArgumentType.getString(context, "name").trim());
             return SINGLE_SUCCESS;
         })));
 
@@ -98,7 +99,7 @@ public class LoadoutCommand extends Command {
             return;
         }
 
-        mc.execute(() -> mc.setScreenAndShow(new LoadoutEditorScreen(name)));
+        mc.execute(() -> mc.setScreenAndShow(new LoadoutScreen(name)));
     }
 
     private LoadoutModule module() {
