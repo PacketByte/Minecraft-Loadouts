@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "loadouts",
+  "version": "${version}",
+  "name": "Loadouts",
+  "description": "Save your inventory and toolbar layouts as loadouts and sort your items into place with one click.",
+  "authors": [
+    "PacketByte"
+  ],
+  "contact": {
+    "sources": "https://github.com/PacketByte/Minecraft-Loadouts"
+  },
+  "icon": "assets/template/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "meteor": [
+      "com.packetbyte.loadouts.Loadouts"
+    ]
+  },
+  "custom": {
+    "meteor-client:color": "50,120,255",
+    "modmenu": {
+      "parent": {
+        "id": "meteor-client"
+      }
+    }
+  },
+  "depends": {
+    "java": ">=${jdk_version}",
+    "minecraft": "*",
+    "meteor-client": "*"
+  }
+}
