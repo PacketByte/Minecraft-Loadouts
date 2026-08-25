@@ -1,7 +1,6 @@
 package com.packetbyte.loadouts.gui;
 
 import com.packetbyte.loadouts.data.ItemMatcher;
-import com.packetbyte.loadouts.Loadouts;
 import com.packetbyte.loadouts.data.Loadout;
 import com.packetbyte.loadouts.data.LoadoutManager;
 import com.packetbyte.loadouts.engine.ApplyEngine;
@@ -20,7 +19,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
@@ -32,12 +33,16 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
 
     private Loadout working;
     private String selectedName = "";
+    private List<String> names = new ArrayList<>();
+    private int selIndex = -1;
 
     private EditBox nameBox;
+    private Button selButton;
     private int panelX;
 
     public LoadoutScreen(String loadoutName) {
         super(player().inventoryMenu, player().getInventory(), Component.literal("Loadouts"));
+        refreshNames();
         select(loadoutName);
     }
 
@@ -49,16 +54,26 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
     protected void init() {
         super.init();
 
-        int colH = 16 + 4 + 18 + 4 + 18 + 4 + 18;
         panelX = leftPos + imageWidth + 6;
         int maxPanelX = this.width - PANEL_W - 4;
         if (panelX > maxPanelX) panelX = maxPanelX;
 
-        int y = topPos + Math.max(4, (imageHeight - colH) / 2);
+        int y = topPos + Math.max(4, (imageHeight - 104) / 2);
 
+        addRenderableWidget(Button.builder(Component.literal("<"), b -> cycle(-1))
+            .bounds(panelX, y, 20, 18).build());
+        selButton = Button.builder(Component.literal("(new)"), b -> cycle(1))
+            .bounds(panelX + 22, y, 76, 18).build();
+        selButton.active = true;
+        addRenderableWidget(selButton);
+        addRenderableWidget(Button.builder(Component.literal(">"), b -> cycle(1))
+            .bounds(panelX + 98, y, 22, 18).build());
+
+        y += 22;
         nameBox = new EditBox(this.font, panelX, y, PANEL_W, 16, Component.literal("Loadout name"));
         nameBox.setMaxLength(32);
         nameBox.setValue(selectedName);
+        nameBox.setHint(Component.literal("name"));
         addRenderableWidget(nameBox);
 
         y += 20;
@@ -76,9 +91,6 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
         y += 22;
         addRenderableWidget(Button.builder(Component.literal("Apply"), b -> apply())
             .bounds(panelX, y, PANEL_W, 18).build());
-
-        Loadouts.LOG.info("LoadoutScreen layout: left={} top={} panelX={} w={} h={}",
-            leftPos, topPos, panelX, this.width, this.height);
     }
 
     @Override
@@ -141,10 +153,10 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
             ItemStack real = guiSlot.getItem();
             boolean ok = ItemMatcher.matches(real, want);
 
-            if (!ok) g.fill(x, y, x + 16, y + 16, 0x60000000);
-
-            g.item(icon(want), x, y);
-            g.outline(x - 1, y - 1, x + 17, y + 17, ok ? 0xFF3ADB70 : 0xFFE05252);
+            if (!ok) {
+                g.fill(x, y, x + 16, y + 16, 0x90000000);
+                g.item(icon(want), x, y);
+            }
 
             if (hoveredSlot == guiSlot) {
                 g.setTooltipForNextFrame(this.font,
@@ -170,6 +182,24 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
         return -1;
     }
 
+    private void refreshNames() {
+        names = new ArrayList<>();
+        for (Loadout loadout : LoadoutManager.all()) names.add(loadout.name);
+    }
+
+    private void cycle(int dir) {
+        if (names.isEmpty()) {
+            hint("No saved loadouts yet.");
+            return;
+        }
+
+        selIndex += dir;
+        if (selIndex < 0) selIndex = names.size() - 1;
+        if (selIndex >= names.size()) selIndex = 0;
+
+        select(names.get(selIndex));
+    }
+
     private void select(String loadoutName) {
         Loadout stored = loadoutName == null || loadoutName.isEmpty() ? null : LoadoutManager.get(loadoutName);
 
@@ -181,6 +211,16 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
             working = new Loadout("");
             selectedName = "";
         }
+
+        selIndex = -1;
+        for (int i = 0; i < names.size(); i++) {
+            if (names.get(i).equalsIgnoreCase(selectedName)) selIndex = i;
+        }
+
+        if (selButton != null) {
+            selButton.setMessage(Component.literal(selectedName.isEmpty() ? "(new)" : selectedName));
+        }
+        if (nameBox != null) nameBox.setValue(selectedName);
     }
 
     private void save() {
@@ -192,7 +232,8 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
 
         working.name = name;
         LoadoutManager.save(working);
-        selectedName = name;
+        refreshNames();
+        select(name);
         hint("Saved " + name + ".");
     }
 
@@ -217,6 +258,8 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
     private void newBlank() {
         working = new Loadout("");
         selectedName = "";
+        selIndex = -1;
+        if (selButton != null) selButton.setMessage(Component.literal("(new)"));
         nameBox.setValue("");
         hint("Blank loadout. Ctrl+click slots to mark them.");
     }
@@ -230,9 +273,10 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
         if (LoadoutManager.delete(selectedName)) hint("Deleted " + selectedName + ".");
         else hint("Could not find " + selectedName + ".");
 
-        selectedName = "";
-        nameBox.setValue("");
-        working = new Loadout("");
+        refreshNames();
+
+        if (!names.isEmpty()) select(names.get(0));
+        else newBlank();
     }
 
     private void apply() {
@@ -244,7 +288,8 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
 
         working.name = name;
         LoadoutManager.save(working);
-        selectedName = name;
+        refreshNames();
+        select(name);
 
         ApplyEngine.get().start(name);
     }
