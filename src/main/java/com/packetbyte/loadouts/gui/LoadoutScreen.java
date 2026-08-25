@@ -1,6 +1,7 @@
 package com.packetbyte.loadouts.gui;
 
 import com.packetbyte.loadouts.data.ItemMatcher;
+import com.packetbyte.loadouts.Loadouts;
 import com.packetbyte.loadouts.data.Loadout;
 import com.packetbyte.loadouts.data.LoadoutManager;
 import com.packetbyte.loadouts.engine.ApplyEngine;
@@ -48,30 +49,36 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
     protected void init() {
         super.init();
 
-        panelX = leftPos + imageWidth + 10;
-        int maxPanelX = this.width - PANEL_W - 8;
+        int colH = 16 + 4 + 18 + 4 + 18 + 4 + 18;
+        panelX = leftPos + imageWidth + 6;
+        int maxPanelX = this.width - PANEL_W - 4;
         if (panelX > maxPanelX) panelX = maxPanelX;
 
-        nameBox = new EditBox(this.font, panelX, topPos, PANEL_W, 16, Component.literal("Loadout name"));
+        int y = topPos + Math.max(4, (imageHeight - colH) / 2);
+
+        nameBox = new EditBox(this.font, panelX, y, PANEL_W, 16, Component.literal("Loadout name"));
         nameBox.setMaxLength(32);
         nameBox.setValue(selectedName);
         addRenderableWidget(nameBox);
 
-        int by = topPos + 20;
+        y += 20;
         addRenderableWidget(Button.builder(Component.literal("Save"), b -> save())
-            .bounds(panelX, by, 58, 18).build());
+            .bounds(panelX, y, 58, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Capture"), b -> captureAll())
-            .bounds(panelX + 62, by, 58, 18).build());
+            .bounds(panelX + 62, y, 58, 18).build());
 
-        by += 22;
+        y += 22;
         addRenderableWidget(Button.builder(Component.literal("New"), b -> newBlank())
-            .bounds(panelX, by, 58, 18).build());
+            .bounds(panelX, y, 58, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Delete"), b -> deleteCurrent())
-            .bounds(panelX + 62, by, 58, 18).build());
+            .bounds(panelX + 62, y, 58, 18).build());
 
-        by += 22;
+        y += 22;
         addRenderableWidget(Button.builder(Component.literal("Apply"), b -> apply())
-            .bounds(panelX, by, PANEL_W, 18).build());
+            .bounds(panelX, y, PANEL_W, 18).build());
+
+        Loadouts.LOG.info("LoadoutScreen layout: left={} top={} panelX={} w={} h={}",
+            leftPos, topPos, panelX, this.width, this.height);
     }
 
     @Override
