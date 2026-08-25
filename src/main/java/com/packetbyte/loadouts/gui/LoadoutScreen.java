@@ -8,7 +8,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -23,7 +25,7 @@ import java.util.Map;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
-public class LoadoutScreen extends InventoryScreen {
+public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
     private static final int PANEL_W = 120;
     private static final int ROW_H = 12;
 
@@ -43,7 +45,7 @@ public class LoadoutScreen extends InventoryScreen {
     private int statusTicks;
 
     public LoadoutScreen(String loadoutName) {
-        super(player());
+        super(player().inventoryMenu, player().getInventory(), Component.literal("Loadouts"));
         refreshSaved();
         select(loadoutName);
     }
@@ -85,6 +87,11 @@ public class LoadoutScreen extends InventoryScreen {
         by += 22;
         addRenderableWidget(Button.builder(Component.literal("Apply"), b -> apply())
             .bounds(panelX, by, PANEL_W, 18).build());
+    }
+
+    @Override
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        g.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
     }
 
     @Override
