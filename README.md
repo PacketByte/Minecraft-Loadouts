@@ -31,6 +31,15 @@ Think of it as a saved inventory snapshot for things like pvp kits, mining setup
 4. Run `.loadout apply mykit` and watch everything snap back into place.
 5. Anything you do not have right now shows up as `Missing: ...` in chat.
 
+## Meteor menu
+Open the Meteor GUI (right shift by default) and you will find a `Loadouts` tab next to Modules, Friends and Macros. It lists every saved loadout with buttons right there:
+
+- `Apply` sorts your items into that loadout
+- `Edit` opens the full editor screen
+- the minus button deletes the loadout after a confirm click
+
+At the bottom there is a name box plus a `Capture current` button, which snapshots your inventory into a fresh loadout without typing any commands.
+
 ## Commands
 | Command | Description |
 | --- | --- |

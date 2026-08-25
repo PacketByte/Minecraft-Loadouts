@@ -98,7 +98,7 @@ public class LoadoutCommand extends Command {
             return;
         }
 
-        mc.setScreenAndShow(new LoadoutEditorScreen(name));
+        mc.execute(() -> mc.setScreenAndShow(new LoadoutEditorScreen(name)));
     }
 
     private LoadoutModule module() {

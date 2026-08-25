@@ -2,11 +2,13 @@ package com.packetbyte.loadouts;
 
 import com.packetbyte.loadouts.commands.LoadoutCommand;
 import com.packetbyte.loadouts.data.LoadoutManager;
+import com.packetbyte.loadouts.gui.LoadoutsTab;
 import com.packetbyte.loadouts.modules.LoadoutModule;
 import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.commands.Commands;
+import meteordevelopment.meteorclient.gui.tabs.Tabs;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import org.slf4j.Logger;
@@ -23,6 +25,7 @@ public class Loadouts extends MeteorAddon {
 
         Modules.get().add(new LoadoutModule());
         Commands.add(new LoadoutCommand());
+        Tabs.add(new LoadoutsTab());
     }
 
     @Override
