@@ -1,6 +1,7 @@
 package com.packetbyte.loadouts.gui;
 
 import com.packetbyte.loadouts.data.ItemMatcher;
+import net.minecraft.client.renderer.RenderPipelines;
 import com.packetbyte.loadouts.data.Loadout;
 import com.packetbyte.loadouts.data.LoadoutManager;
 import com.packetbyte.loadouts.engine.ApplyEngine;
@@ -59,6 +60,8 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
         super.init();
 
         panelX = leftPos + imageWidth + 10;
+        int maxPanelX = this.width - PANEL_W - 8;
+        if (panelX > maxPanelX) panelX = maxPanelX;
         listY = topPos + 14;
 
         int controlsH = 16 + 4 + 18 + 4 + 18 + 4 + 18;
@@ -92,6 +95,13 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
     @Override
     protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         g.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
+    }
+
+    @Override
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+        super.extractBackground(g, mouseX, mouseY, delta);
+        g.blit(RenderPipelines.GUI_TEXTURED, INVENTORY_LOCATION, leftPos, topPos, 0.0F, 0.0F,
+            imageWidth, imageHeight, 256, 256);
     }
 
     @Override
@@ -208,6 +218,8 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
             return true;
         }
 
+        if (ApplyEngine.get().isApplying() && hoveredSlot != null) return true;
+
         if (event.hasControlDown() && hoveredSlot != null
             && mc.player != null && mc.player.containerMenu == mc.player.inventoryMenu
             && !ApplyEngine.get().isApplying()) {
@@ -243,36 +255,79 @@ public class LoadoutScreen extends AbstractContainerScreen<InventoryMenu> {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+        drawPanelChrome(g);
         super.extractRenderState(g, mouseX, mouseY, delta);
+        drawPanelContent(g, mouseX, mouseY);
+    }
 
+    private void drawPanelChrome(GuiGraphicsExtractor g) {
+        int pad = 5;
+        int x1 = panelX - pad;
+        int y1 = topPos - 8;
+        int x2 = panelX + PANEL_W + pad;
+        int y2 = footerY() + 12;
+
+        g.fill(x1, y1, x2, y2, 0xB0000000);
+        g.outline(x1, y1, x2, y2, 0xFF3A3A3A);
+        g.fill(x1, topPos - 4, x2, topPos - 3, 0xFF505050);
+    }
+
+    private void drawPanelContent(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         g.text(this.font, "Loadouts", panelX, topPos + 2, 0xFFFFFFFF, true);
+
+        String countLabel = saved.size() + " saved";
+        g.text(this.font, countLabel, panelX + PANEL_W - this.font.width(countLabel),
+            topPos + 2, 0xFF707070, true);
+
+        int listBottom = listY + listRows * ROW_H;
+        boolean hoveringList = mouseX >= panelX && mouseX <= panelX + PANEL_W
+            && mouseY >= listY && mouseY < listBottom;
 
         int maxVisible = Math.min(saved.size() - scroll, listRows);
         for (int row = 0; row < maxVisible; row++) {
             int index = scroll + row;
             String entry = saved.get(index);
             boolean active = entry.equalsIgnoreCase(selectedName);
+            int y = listY + row * ROW_H;
 
-            int color = active ? 0xFFFFFFFF : 0xFF909090;
-            String prefix = active ? "> " : "";
-            g.text(this.font, prefix + entry, panelX, listY + row * ROW_H, color, true);
+            if (active || (hoveringList && mouseY >= y && mouseY < y + ROW_H)) {
+                g.fill(panelX - 3, y - 2, panelX + PANEL_W + 3, y + ROW_H - 1,
+                    active ? 0x48FFFFFF : 0x22FFFFFF);
+            }
+
+            g.text(this.font, entry, panelX + 2, y, active ? 0xFFFFFFFF : 0xFFA8A8A8, true);
         }
 
-        int controlsTop = listY + listRows * ROW_H + 6;
-        int footerY = controlsTop + 86;
+        if (saved.size() > listRows) drawScrollbar(g, listY, listBottom);
 
         if (ApplyEngine.get().isApplying()) {
             g.text(this.font, "Sorting " + ApplyEngine.get().applyingName() + "...",
-                panelX, footerY, 0xFFFFFF55, true);
+                panelX, footerY(), 0xFFFFFF55, true);
         } else if (statusTicks > 0 && !statusMsg.isEmpty()) {
-            g.text(this.font, statusMsg, panelX, footerY, 0xFF787878, true);
+            g.text(this.font, statusMsg, panelX, footerY(), 0xFF787878, true);
         }
 
         renderGhosts(g, mouseX, mouseY);
     }
 
+    private void drawScrollbar(GuiGraphicsExtractor g, int trackTop, int trackBottom) {
+        int x = panelX + PANEL_W + 2;
+        g.fill(x, trackTop, x + 2, trackBottom, 0x40000000);
+
+        int height = trackBottom - trackTop;
+        int thumbH = Math.max(8, height * listRows / saved.size());
+        int maxScroll = Math.max(1, saved.size() - listRows);
+        int thumbY = trackTop + (height - thumbH) * scroll / maxScroll;
+
+        g.fill(x, thumbY, x + 2, thumbY + thumbH, 0xFF888888);
+    }
+
+    private int footerY() {
+        return listY + listRows * ROW_H + 6 + 86;
+    }
+
     private void renderGhosts(GuiGraphicsExtractor g, int mouseX, int mouseY) {
-        if (mc.player == null || ApplyEngine.get().isApplying()) return;
+        if (mc.player == null) return;
 
         for (int slot = 0; slot < Loadout.SIZE; slot++) {
             String id = working.get(slot);
